@@ -1,38 +1,39 @@
-const express = require('express');
+// Node.js nativo
+
+const http = require('http');
+const fs = require('fs');
 const path = require('path');
 
-const app = express();
-const PORT = 3000;
+const server = http.createServer((req, res) => {
+  // Construir ruta del archivo
+  const filePath = path.join(
+    __dirname,
+    'public',
+    req.url === '/' ? 'index.html' : req.url
+  );
 
-// Middleware para servir archivos estáticos
-app.use(express.static(path.join(__dirname, 'public')));
+  // Extensión del archivo (para definir tipo MIME)
+  const ext = path.extname(filePath).toLowerCase();
+  const types = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'text/javascript',
+  };
 
-// Ruta personalizada /about
-app.get('/about', (req, res) => {
-  res.send('<h2>Esta es la página "Acerca de"</h2>');
+  // Leer y servir archivo
+  fs.readFile(filePath, (err, content) => {
+    if (err) {
+      res.writeHead(404, { 'Content-Type': 'text/html' });
+      res.end('<h1>Error 404: Página no encontrada</h1>');
+      return;
+    }
+
+    res.writeHead(200, { 'Content-Type': types[ext] || 'text/plain' });
+    res.end(content);
+  });
 });
 
-// Ruta tipo API
-app.get('/api/saludo', (req, res) => {
-  res.json({ mensaje: 'Hola desde la API de Express 👋' });
-});
-
-// Ruta dinámica con parámetro
-app.get('/usuario/:nombre', (req, res) => {
-  const nombre = req.params.nombre;
-  res.send(`<h2>Hola, ${nombre}! Bienvenido a Express 🚀</h2>`);
-});
-
-// Ruta 404 (si ninguna anterior coincide)
-app.use((req, res) => {
-  res.status(404).send(`
-    <h1>❌ Error 404</h1>
-    <p>La página que buscas no existe o fue movida.</p>
-    <a href="/">Volver al inicio</a>
-  `);
-});
-
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor en http://localhost:${PORT}`);
-});
+// Servidor en puerto 3000
+server.listen(3000, () =>
+  console.log('Servidor en http://localhost:3000')
+);
